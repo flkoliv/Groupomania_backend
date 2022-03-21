@@ -2,20 +2,12 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const userRoutes = require('./routes/user');
-const { Sequelize } = require('sequelize');
+const postRoutes = require('./routes/post');
 
-require('dotenv').config();
-const sequelize = new Sequelize("groupomania",  process.env.mysqlUser, process.env.mysqlPassword, {
-    dialect: "mysql",
-    host: process.env.mysqlHost
+const db = require("./models");
+db.sequelize.sync({ force: false }).then(() => {
+    console.log("Drop and re-sync db.");
 });
-
-try {
-    sequelize.authenticate();
-    console.log('Connecté à la base de données MySQL!');
-} catch (error) {
-    console.error('Impossible de se connecter, erreur suivante :', error);
-}
 
 app.use(express.json());
 
@@ -30,7 +22,8 @@ app.use((req, res, next) => {
 
 // routes
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/api/auth', userRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes)
 
 
 
