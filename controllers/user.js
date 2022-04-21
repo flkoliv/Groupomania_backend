@@ -6,6 +6,8 @@ const db = require("../models");
 const User = db.user;
 const Op = db.Sequelize.Op;
 
+require('dotenv').config();
+
 // Création d'un compte
 exports.signup = (req, res, next) => {
     if (validator.isStrongPassword(req.body.password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 })) {
@@ -14,7 +16,6 @@ exports.signup = (req, res, next) => {
                 const user = {
                     firstname: req.body.firstname,
                     lastname: req.body.lastname,
-                    username: req.body.username,
                     email: req.body.email,
                     password: hash
                 };
@@ -46,8 +47,8 @@ exports.login = (req, res, next) => {
                     res.status(200).json({
                         userId: user.id,
                         token: jwt.sign(
-                            { userId: user.id },
-                            'cUWt#2CCQr%00B]uPDXiR|$N:p7J`F',
+                            { userId: user.id, admin: user.admin },
+                            process.env.SECRET,
                             { expiresIn: '24h' }
                         )
                     });
@@ -59,7 +60,11 @@ exports.login = (req, res, next) => {
 
 
 exports.delete = (req, res, next) => {
-    User.destroy({ where: { id: req.params.id } })
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userId = decodedToken.userId;
+    console.log(userId)
+    User.destroy({ where: { id: userId } })
         .then(user => {
             if (!user) {
                 res.status(400).json({ message: 'Utilisateur inexistant !' })
@@ -73,14 +78,19 @@ exports.delete = (req, res, next) => {
 
 
 exports.modify = (req, res, next) => {
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userId = decodedToken.userId;
+    console.log(userId)
     User.update(
-        { firstname: req.body.firstname, lastname: req.body.lastname, username: req.body.username, email: req.body.email },
-        { where: { id: req.params.id } })
+        { firstname: req.body.firstname, lastname: req.body.lastname, email: req.body.email },
+        { where: { id: userId } })
         .then(result => {
-            if (result[0]>0){
+            if (result[0] > 0) {
                 res.status(200).json({ message: 'Utilisateur modifié !' })
-            } else{
+            } else {
                 res.status(400).json({ message: 'Utilisateur inexistant !' })
+                console.log(result)
             }
         })
         .catch(error => res.status(400).json({ error }));
@@ -101,9 +111,16 @@ exports.getAllUsers = (req, res, next) => {
 
 
 exports.getOneUser = (req, res, next) => {
-    User.findOne({ 
-        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] } , 
-        where: { id: req.params.id } })
+    console.log(req.headers.authorization)
+    const token = req.headers.authorization.split(' ')[1];
+    console.log(token)
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userId = decodedToken.userId;
+    console.log(userId);
+    User.findOne({
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+        where: { id: userId }
+    })
         .then(user => {
             if (!user) {
                 res.status(400).json({ message: 'Utilisateur inexistant !' })
