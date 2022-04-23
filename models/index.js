@@ -34,13 +34,13 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-db.user.hasMany(db.post);
-db.post.belongsTo(db.user);
-db.post.hasMany(db.comment);
-db.comment.belongsTo(db.post);
-db.user.hasMany(db.comment);
-db.comment.belongsTo(db.user);
-db.user.belongsToMany(db.post, {through: 'likes'});
-db.post.belongsToMany(db.user, {through: 'likes'});
+db.user.hasMany(db.post,{onDelete: 'cascade'});
+db.post.belongsTo(db.user,{onDelete: 'cascade'});
+db.post.hasMany(db.comment,{onDelete: 'cascade'});
+db.comment.belongsTo(db.post,{onDelete: 'cascade'});
+db.user.hasMany(db.comment,{onDelete: 'cascade'});
+db.comment.belongsTo(db.user,{onDelete: 'cascade'});
+db.user.belongsToMany(db.post, {onDelete: 'cascade', through: 'likes'});
+db.post.belongsToMany(db.user, {onDelete: 'cascade', through: 'likes'});
  
 module.exports = db;

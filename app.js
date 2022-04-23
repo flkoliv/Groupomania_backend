@@ -7,7 +7,7 @@ const helmet = require("helmet");
 const rateLimit = require('express-rate-limit')
 
 const db = require("./models");
-db.sequelize.sync({ force: false }).then(() => {
+db.sequelize.sync({ force: true }).then(() => {
     console.log("Drop and re-sync db.");
 });
 
