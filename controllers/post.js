@@ -147,15 +147,6 @@ exports.getAllPosts = (req, res, next) => {
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.getAllLikes = (req, res, next) => {
-  Like.findAndCountAll({ where: { postId: req.params.id } })
-    .then((likes) => {
-      // delete likes["rows"];
-      res.status(200).json(likes);
-    })
-    .catch((error) => res.status(500).json({ error }));
-};
-
 exports.getOnePost = (req, res, next) => {
   console.log("get one post");
   Post.findOne({
@@ -178,22 +169,6 @@ exports.getOnePost = (req, res, next) => {
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.updatePost = (req, res, next) => {
-  console.log("modifier post");
-  Post.update(
-    { title: req.body.title, description: req.body.description },
-    { where: { id: req.body.id, userId: req.body.userId } }
-  )
-    .then((result) => {
-      if (result[0] > 0) {
-        res.status(200).json({ message: "Post modifié !" });
-      } else {
-        res.status(400).json({ message: "Post inexistant !" });
-      }
-    })
-    .catch((error) => res.status(400).json({ error }));
-};
-
 exports.deletePost = (req, res, next) => {
   const token = req.headers.authorization.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
@@ -205,20 +180,34 @@ exports.deletePost = (req, res, next) => {
   } else {
     request = { where: { id: req.body.id, userId: userId } };
   }
-  Post.findOne({ where: { id: req.body.id } }).then((post) => {
-    const filename = post.dataValues.imageUrl.split("/images/")[1];
-    fs.unlink(`images/${filename}`, () => {
-      Post.destroy(request)
-        .then((response) => {
-          if (!response) {
-            res.status(400).json({ message: "Post inexistant !" });
-          } else {
-            res.status(200).json({ message: "Post supprimé !" });
-          }
-        })
-        .catch((error) => res.status(500).json({ error }));
-    });
-  }).catch(error => res.status(500).json({ error }));
+  Post.findOne({ where: { id: req.body.id } })
+    .then((post) => {
+      if (post.dataValues.imageUrl != null) { // si il y a une image
+        const filename = post.dataValues.imageUrl.split("/images/")[1];
+        fs.unlink(`images/${filename}`, () => {
+          Post.destroy(request)
+            .then((response) => {
+              if (!response) {
+                res.status(400).json({ message: "Post inexistant !" });
+              } else {
+                res.status(200).json({ message: "Post supprimé !" });
+              }
+            })
+            .catch((error) => res.status(500).json({ error }));
+        });
+      } else { // s'il n'y a pas d'image
+        Post.destroy(request)
+          .then((response) => {
+            if (!response) {
+              res.status(400).json({ message: "Post inexistant !" });
+            } else {
+              res.status(200).json({ message: "Post supprimé !" });
+            }
+          })
+          .catch((error) => res.status(500).json({ error }));
+      }
+    })
+    .catch((error) => res.status(500).json({ error }));
 };
 
 exports.getOneComment = (req, res, next) => {
