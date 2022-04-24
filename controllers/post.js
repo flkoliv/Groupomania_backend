@@ -14,7 +14,16 @@ const Op = db.Sequelize.Op;
 require("dotenv").config();
 
 exports.addPost = (req, res, next) => {
+  // ajouter un post
   const post = { ...req.body };
+  if (post.description.trim() == "") {
+    res.status(400).json({ message: "manque description !" });
+    return;
+  }
+  if (post.title.trim() == "") {
+    res.status(400).json({ message: "manque titre!" });
+    return;
+  }
   if (req.file) {
     post.imageUrl = `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
@@ -28,8 +37,8 @@ exports.addPost = (req, res, next) => {
 };
 
 exports.addComment = (req, res, next) => {
+  // ajouter un commentaire
   let comment = req.body;
-
   Comment.create(comment)
     .then((result) =>
       res.status(201).json({ message: "Commentaire créé !", result: result })
@@ -38,6 +47,7 @@ exports.addComment = (req, res, next) => {
 };
 
 exports.addLike = (req, res, next) => {
+  // ajouter un like
   let like = req.body;
   console.log(like);
   Like.create(like)
@@ -46,6 +56,7 @@ exports.addLike = (req, res, next) => {
 };
 
 exports.deleteComment = (req, res, next) => {
+  // supprimer un commentaire
   const token = req.headers.authorization.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
   const admin = decodedToken.admin;
@@ -68,6 +79,7 @@ exports.deleteComment = (req, res, next) => {
 };
 
 exports.removeLike = (req, res, next) => {
+  // supprimer un like
   Like.destroy({ where: { postId: req.body.postId, userId: req.body.userId } })
     .then((like) => {
       if (!like) {
@@ -80,6 +92,7 @@ exports.removeLike = (req, res, next) => {
 };
 
 exports.getAllPosts = (req, res, next) => {
+  //récupération de tous les posts
   const token = req.headers.authorization.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
   const userId = decodedToken.userId;
@@ -88,6 +101,7 @@ exports.getAllPosts = (req, res, next) => {
     attributes: {
       include: [
         [
+          // compte nb commentaires
           db.sequelize.literal(`(
                             SELECT COUNT(*)
                             FROM comments
@@ -97,6 +111,7 @@ exports.getAllPosts = (req, res, next) => {
           "nbComments",
         ],
         [
+          // compte nb likes
           db.sequelize.literal(`(
                             SELECT COUNT(*)
                             FROM likes
@@ -106,6 +121,7 @@ exports.getAllPosts = (req, res, next) => {
           "nbLikes",
         ],
         [
+          // est liké par l'utilisateur
           db.sequelize.literal(`(
                               SELECT TRUE
                               FROM likes
@@ -116,6 +132,7 @@ exports.getAllPosts = (req, res, next) => {
         ],
 
         [
+          // prénom de l'auteur
           db.sequelize.literal(`(
                             SELECT firstname
                             FROM users
@@ -125,6 +142,7 @@ exports.getAllPosts = (req, res, next) => {
           "firstname",
         ],
         [
+          // nom de l'auteur
           db.sequelize.literal(`(
                             SELECT lastname
                             FROM users
@@ -148,7 +166,7 @@ exports.getAllPosts = (req, res, next) => {
 };
 
 exports.getOnePost = (req, res, next) => {
-  console.log("get one post");
+  // récupération d'un post
   Post.findOne({
     where: { id: req.params.id },
     include: [
@@ -169,7 +187,7 @@ exports.getOnePost = (req, res, next) => {
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.deletePost = (req, res, next) => {
+exports.deletePost = (req, res, next) => {// suppression d'un post
   const token = req.headers.authorization.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
   const admin = decodedToken.admin;
@@ -182,7 +200,8 @@ exports.deletePost = (req, res, next) => {
   }
   Post.findOne({ where: { id: req.body.id } })
     .then((post) => {
-      if (post.dataValues.imageUrl != null) { // si il y a une image
+      if (post.dataValues.imageUrl != null) {
+        // si il y a une image
         const filename = post.dataValues.imageUrl.split("/images/")[1];
         fs.unlink(`images/${filename}`, () => {
           Post.destroy(request)
@@ -195,7 +214,8 @@ exports.deletePost = (req, res, next) => {
             })
             .catch((error) => res.status(500).json({ error }));
         });
-      } else { // s'il n'y a pas d'image
+      } else {
+        // s'il n'y a pas d'image
         Post.destroy(request)
           .then((response) => {
             if (!response) {
@@ -210,7 +230,7 @@ exports.deletePost = (req, res, next) => {
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.getOneComment = (req, res, next) => {
+exports.getOneComment = (req, res, next) => {// récupération d'un commentaire
   console.log("get one comment");
   Comment.findOne({
     where: { id: req.params.commentId },

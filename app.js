@@ -6,8 +6,9 @@ const postRoutes = require('./routes/post');
 const helmet = require("helmet");
 const rateLimit = require('express-rate-limit')
 
+// init sequelize
 const db = require("./models");
-db.sequelize.sync({ force: true }).then(() => {
+db.sequelize.sync({ force: false }).then(() => {
     console.log("Drop and re-sync db.");
 });
 
