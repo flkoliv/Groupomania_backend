@@ -3,7 +3,7 @@
 ## Installation : 
 1. Cloner le repertoire.
 2. Aller à la racine du répertoire
-3. Executer npm install
+3. Executer `npm install`
 4. Dans le repertoire config, créer un fichier config.json dont le contenu est :
 ```
 {
