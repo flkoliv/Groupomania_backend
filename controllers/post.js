@@ -1,17 +1,10 @@
 const fs = require("fs");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const validator = require("validator");
 
 const db = require("../models");
 const User = db.user;
 const Post = db.post;
 const Comment = db.comment;
 const Like = db.likes;
-
-const Op = db.Sequelize.Op;
-
-require("dotenv").config();
 
 exports.addPost = (req, res, next) => {
   // ajouter un post
@@ -25,6 +18,7 @@ exports.addPost = (req, res, next) => {
     return;
   }
   if (req.file) {
+    // s'il y a un fichier
     post.imageUrl = `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
     }`;
@@ -49,7 +43,6 @@ exports.addComment = (req, res, next) => {
 exports.addLike = (req, res, next) => {
   // ajouter un like
   let like = req.body;
-  console.log(like);
   Like.create(like)
     .then(() => res.status(201).json({ message: "Like ajouté !" }))
     .catch((error) => res.status(400).json({ error }));
@@ -57,10 +50,8 @@ exports.addLike = (req, res, next) => {
 
 exports.deleteComment = (req, res, next) => {
   // supprimer un commentaire
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const admin = decodedToken.admin;
-  const userId = decodedToken.userId;
+  const admin = req.user.admin;
+  const userId = req.user.userId;
   let request;
   if (admin) {
     request = { where: { id: req.body.id } };
@@ -93,10 +84,7 @@ exports.removeLike = (req, res, next) => {
 
 exports.getAllPosts = (req, res, next) => {
   //récupération de tous les posts
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const userId = decodedToken.userId;
-  const admin = decodedToken.admin;
+  const userId = req.user.userId;
   Post.findAll({
     attributes: {
       include: [
@@ -187,11 +175,10 @@ exports.getOnePost = (req, res, next) => {
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.deletePost = (req, res, next) => {// suppression d'un post
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const admin = decodedToken.admin;
-  const userId = decodedToken.userId;
+exports.deletePost = (req, res, next) => {
+  // suppression d'un post
+  const admin = req.user.admin;
+  const userId = req.user.userId;
   let request;
   if (admin) {
     request = { where: { id: req.body.id } };
@@ -230,14 +217,14 @@ exports.deletePost = (req, res, next) => {// suppression d'un post
     .catch((error) => res.status(500).json({ error }));
 };
 
-exports.getOneComment = (req, res, next) => {// récupération d'un commentaire
-  console.log("get one comment");
+exports.getOneComment = (req, res, next) => {
+  // récupération d'un commentaire
   Comment.findOne({
     where: { id: req.params.commentId },
   })
     .then((post) => {
       if (!post) {
-        res.status(400).json({ message: "post inexistant !" });
+        res.status(400).json({ message: "commentaire  inexistant !" });
       } else {
         res.status(200).json(post);
       }

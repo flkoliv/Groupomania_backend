@@ -4,9 +4,8 @@ const validator = require("validator");
 
 const db = require("../models");
 const User = db.user;
-const Op = db.Sequelize.Op;
 
-require("dotenv").config();
+// require("dotenv").config();
 
 exports.signup = (req, res, next) => {
   // Création d'un compte
@@ -70,10 +69,7 @@ exports.login = (req, res, next) => {
 
 exports.delete = (req, res, next) => {
   // suppression utilisateur
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const userId = decodedToken.userId;
-  console.log(userId);
+  const userId = req.user.userId;
   User.destroy({ where: { id: userId } })
     .then((user) => {
       if (!user) {
@@ -87,10 +83,7 @@ exports.delete = (req, res, next) => {
 
 exports.modify = (req, res, next) => {
   // modification utilisateur
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const userId = decodedToken.userId;
-  console.log(userId);
+  const userId = req.user.userId;
   User.update(
     {
       firstname: req.body.firstname,
@@ -127,12 +120,7 @@ exports.getAllUsers = (req, res, next) => {
 
 exports.getOneUser = (req, res, next) => {
   // récupération d'un utilisateur
-  console.log(req.headers.authorization);
-  const token = req.headers.authorization.split(" ")[1];
-  console.log(token);
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  const userId = decodedToken.userId;
-  console.log(userId);
+  const userId = req.user.userId;
   User.findOne({
     attributes: { exclude: ["password", "createdAt", "updatedAt"] },
     where: { id: userId },
